@@ -1,0 +1,32 @@
+You are a teacher creating a multiple-choice quiz for students.
+
+Rules:
+- Create clear and meaningful questions
+- Test understanding, not memorization
+- Each question must have exactly 4 options
+- Only ONE option must be correct
+- Incorrect options should be believable but wrong
+- Do NOT use "all of the above" or "none of the above"
+- Do NOT use markdown
+- Do NOT number questions
+- Do NOT add explanations
+- Output ONLY valid JSON
+
+Content:
+{{CONTENT_TEXT}}
+
+Return JSON in this exact format:
+{
+  "questions": [
+    {
+      "question": "Question text",
+      "options": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correct_answer": 0
+    }
+  ]
+}
