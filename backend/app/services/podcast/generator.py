@@ -9,21 +9,30 @@ def generate_podcast_script(material_text: str) -> dict:
     llm = get_llm()
     prompt = get_podcast_prompt(material_text[:8000])
     response = llm.invoke(prompt)
-    
-    text = getattr(response, 'content', str(response)).strip()
-    start = text.find('{')
-    end = text.rfind('}')
+
+    text = getattr(response, "content", str(response)).strip()
+    start = text.find("{")
+    end = text.rfind("}")
     if start != -1 and end != -1:
-        text = text[start:end+1]
+        text = text[start : end + 1]
     return json.loads(text)
 
 
-def generate_podcast_audio(material_text: str) -> tuple[BytesIO, str]:
+def generate_podcast_audio(material_text: str) -> tuple[BytesIO, str, list]:
+    """
+    Generate podcast audio with dialogue timing information.
+
+    Returns:
+        tuple: (audio_buffer, title, dialogue_with_timing)
+        - audio_buffer: BytesIO containing the WAV audio
+        - title: Podcast title
+        - dialogue_with_timing: list of dialogue segments with timing data
+    """
     script = generate_podcast_script(material_text)
-    
+
     dialogue = [(d["speaker"], d["text"]) for d in script.get("dialogue", [])]
-    
-    audio_buffer = generate_dialogue_audio(dialogue)
-    
+
+    audio_buffer, timing_data = generate_dialogue_audio(dialogue)
+
     title = script.get("title", "Podcast")
-    return audio_buffer, title
+    return audio_buffer, title, timing_data

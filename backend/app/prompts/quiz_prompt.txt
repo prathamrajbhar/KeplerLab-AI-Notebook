@@ -9,7 +9,7 @@ Rules:
 - Do NOT use "all of the above" or "none of the above"
 - Do NOT use markdown
 - Do NOT number questions
-- Do NOT add explanations
+- Do NOT add explanations as separate text, they must be part of the JSON
 - Output ONLY valid JSON
 
 Content:
@@ -26,7 +26,8 @@ Return JSON in this exact format:
         "Option C",
         "Option D"
       ],
-      "correct_answer": 0
+      "correct_answer": 0,
+      "explanation": "Brief explanation of why the correct answer is right"
     }
   ]
 }

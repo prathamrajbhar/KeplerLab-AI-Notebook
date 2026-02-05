@@ -411,11 +411,15 @@ function InlineAudioView({ data, materialId }) {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
     const audioRef = useRef(null);
+    const captionRefs = useRef([]);
+    const captionContainerRef = useRef(null);
 
     const audioFilename = data?.audio_filename;
     const userId = data?.user_id;
     const title = data?.title || 'Audio Overview';
+    const dialogue = data?.dialogue || [];
 
     const handleDownload = async () => {
         setDownloading(true);
@@ -450,7 +454,30 @@ function InlineAudioView({ data, materialId }) {
 
     const handleTimeUpdate = () => {
         if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime);
+            const time = audioRef.current.currentTime;
+            setCurrentTime(time);
+
+            // Find active caption based on current time
+            const activeIndex = dialogue.findIndex(
+                (segment) => time >= segment.start_time && time < segment.end_time
+            );
+
+            if (activeIndex !== activeCaptionIndex) {
+                setActiveCaptionIndex(activeIndex);
+
+                // Auto-scroll to active caption
+                if (activeIndex >= 0 && captionRefs.current[activeIndex] && captionContainerRef.current) {
+                    const container = captionContainerRef.current;
+                    const caption = captionRefs.current[activeIndex];
+                    const containerRect = container.getBoundingClientRect();
+                    const captionRect = caption.getBoundingClientRect();
+
+                    // Check if caption is not fully visible
+                    if (captionRect.top < containerRect.top || captionRect.bottom > containerRect.bottom) {
+                        caption.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
         }
     };
 
@@ -467,6 +494,17 @@ function InlineAudioView({ data, materialId }) {
         if (audioRef.current) {
             audioRef.current.currentTime = newTime;
             setCurrentTime(newTime);
+        }
+    };
+
+    const seekToCaption = (startTime) => {
+        if (audioRef.current) {
+            audioRef.current.currentTime = startTime;
+            setCurrentTime(startTime);
+            if (!isPlaying) {
+                audioRef.current.play();
+                setIsPlaying(true);
+            }
         }
     };
 
@@ -513,7 +551,7 @@ function InlineAudioView({ data, materialId }) {
             <div className="flex items-start justify-between">
                 <div>
                     <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
-                    <p className="text-xs text-text-muted">Based on 1 source</p>
+                    <p className="text-xs text-text-muted">Based on 1 source • {dialogue.length} segments</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -603,6 +641,61 @@ function InlineAudioView({ data, materialId }) {
                     </svg>
                 </button>
             </div>
+
+            {/* Captions Section */}
+            {dialogue.length > 0 && (
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                        </svg>
+                        <h4 className="text-sm font-medium text-text-primary">Transcript</h4>
+                    </div>
+
+                    <div
+                        ref={captionContainerRef}
+                        className="glass rounded-xl p-2 max-h-56 overflow-y-auto space-y-1.5 custom-scrollbar"
+                    >
+                        {dialogue.map((segment, index) => {
+                            const isActive = index === activeCaptionIndex;
+                            const isHost = segment.speaker === 'host';
+
+                            return (
+                                <div
+                                    key={index}
+                                    ref={(el) => (captionRefs.current[index] = el)}
+                                    onClick={() => seekToCaption(segment.start_time)}
+                                    className={`px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200 ${isActive
+                                        ? 'bg-accent/15 border-l-2 border-accent'
+                                        : 'hover:bg-white/5'
+                                        }`}
+                                >
+                                    {/* Header: Speaker + Timestamp */}
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <span className={`text-xs font-semibold uppercase tracking-wide ${isHost ? 'text-blue-400' : 'text-purple-400'
+                                            }`}>
+                                            {isHost ? '🎙️ Host' : '👤 Guest'}
+                                        </span>
+                                        <span className="text-xs text-text-muted font-mono">
+                                            {formatTime(segment.start_time)}
+                                        </span>
+                                    </div>
+
+                                    {/* Caption Text */}
+                                    <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-white' : 'text-text-secondary'
+                                        }`}>
+                                        {segment.text}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <p className="text-xs text-text-muted text-center italic">
+                        Click any caption to jump to that moment
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -897,9 +990,9 @@ function InlineQuizView({ data }) {
     const [score, setScore] = useState(0);
     const questions = data?.questions || [];
 
-    const handleAnswer = (option) => {
-        setSelectedAnswer(option);
-        if (option === questions[currentIndex].correct_answer) setScore(prev => prev + 1);
+    const handleAnswer = (index) => {
+        setSelectedAnswer(index);
+        if (index === questions[currentIndex].correct_answer) setScore(prev => prev + 1);
     };
 
     const next = () => {
@@ -950,8 +1043,8 @@ function InlineQuizView({ data }) {
 
             <div className="space-y-2">
                 {question.options?.map((option, idx) => {
-                    const isSelected = selectedAnswer === option;
-                    const isCorrect = option === question.correct_answer;
+                    const isSelected = selectedAnswer === idx;
+                    const isCorrect = idx === question.correct_answer;
                     const showState = selectedAnswer !== null;
                     let stateClass = 'border-border hover:border-border-medium';
                     if (showState) {
@@ -962,7 +1055,7 @@ function InlineQuizView({ data }) {
                     return (
                         <button
                             key={idx}
-                            onClick={() => handleAnswer(option)}
+                            onClick={() => handleAnswer(idx)}
                             disabled={selectedAnswer !== null}
                             className={`w-full p-3 text-left rounded-xl border transition-all text-sm ${stateClass}`}
                         >
@@ -973,7 +1066,7 @@ function InlineQuizView({ data }) {
             </div>
 
             {/* Feedback after answer */}
-            {selectedAnswer && (
+            {selectedAnswer !== null && (
                 <div className={`p-3 rounded-xl text-sm font-medium ${selectedAnswer === question.correct_answer
                     ? 'bg-status-success/15 text-green-400 border border-status-success/30'
                     : 'bg-status-error/15 text-red-400 border border-status-error/30'
@@ -993,13 +1086,20 @@ function InlineQuizView({ data }) {
                                 </svg>
                                 <span>Wrong!</span>
                             </div>
-                            <p className="text-xs text-text-secondary ml-7">Correct answer: {question.correct_answer}</p>
+                            <p className="text-xs text-text-secondary ml-7">Correct answer: {question.options[question.correct_answer]}</p>
+                        </div>
+                    )}
+                    {question.explanation && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                            <p className="text-xs text-text-secondary leading-relaxed italic">
+                                {question.explanation}
+                            </p>
                         </div>
                     )}
                 </div>
             )}
 
-            {selectedAnswer && (
+            {selectedAnswer !== null && (
                 <button onClick={next} className="btn-primary w-full">
                     {currentIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
                 </button>
