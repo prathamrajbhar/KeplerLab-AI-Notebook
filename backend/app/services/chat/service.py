@@ -8,17 +8,14 @@ _sessions: Dict[str, Dict] = {}
 
 def get_or_create_session(session_id: str, context: str) -> Dict:
     if session_id not in _sessions:
-        _sessions[session_id] = {
-            "context": context,
-            "history": []
-        }
+        _sessions[session_id] = {"context": context, "history": []}
     return _sessions[session_id]
 
 
 def format_history(history: List[Dict]) -> str:
     if not history:
         return "None"
-    
+
     formatted = []
     for msg in history[-10:]:
         formatted.append(f"User: {msg['user']}")
@@ -28,20 +25,20 @@ def format_history(history: List[Dict]) -> str:
 
 def chat(session_id: str, context: str, user_message: str) -> str:
     session = get_or_create_session(session_id, context)
-    
+
+    # Refresh context to allow switching materials within the same session
+    session["context"] = context
+
     history_str = format_history(session["history"])
-    
+
     prompt = get_chat_prompt(session["context"], history_str, user_message)
-    
+
     llm = get_llm()
     response = llm.invoke(prompt)
-    answer = getattr(response, 'content', str(response)).strip()
-    
-    session["history"].append({
-        "user": user_message,
-        "assistant": answer
-    })
-    
+    answer = getattr(response, "content", str(response)).strip()
+
+    session["history"].append({"user": user_message, "assistant": answer})
+
     return answer
 
 

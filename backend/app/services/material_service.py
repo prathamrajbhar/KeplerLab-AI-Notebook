@@ -13,27 +13,32 @@ async def process_material(
     filename: str,
     user_id: UUID,
     db: AsyncSession,
-    notebook_id: Optional[UUID] = None
+    notebook_id: Optional[UUID] = None,
 ) -> Material:
     material = Material(
         filename=filename,
         user_id=user_id,
         notebook_id=notebook_id,
-        status=MaterialStatus.PROCESSING
+        status=MaterialStatus.PROCESSING,
     )
     db.add(material)
     await db.commit()
     await db.refresh(material)
-    
+
     try:
         text = extract_text(file_path)
         material.original_text = text
-        
+
         chunks = chunk_text(text)
         material.chunk_count = str(len(chunks))
-        
-        embed_and_store(chunks, material_id=str(material.id), user_id=str(user_id))
-        
+
+        embed_and_store(
+            chunks,
+            material_id=str(material.id),
+            user_id=str(user_id),
+            notebook_id=str(notebook_id) if notebook_id else None,
+        )
+
         material.status = MaterialStatus.COMPLETED
         await db.commit()
         await db.refresh(material)
@@ -49,14 +54,18 @@ async def get_material(material_id: str, db: AsyncSession) -> Material:
     return result
 
 
-async def get_material_for_user(material_id: str, user_id: UUID, db: AsyncSession) -> Optional[Material]:
+async def get_material_for_user(
+    material_id: str, user_id: UUID, db: AsyncSession
+) -> Optional[Material]:
     result = await db.execute(
         select(Material).where(Material.id == material_id, Material.user_id == user_id)
     )
     return result.scalar_one_or_none()
 
 
-async def get_user_materials(user_id: UUID, db: AsyncSession, notebook_id: Optional[UUID] = None) -> List[Material]:
+async def get_user_materials(
+    user_id: UUID, db: AsyncSession, notebook_id: Optional[UUID] = None
+) -> List[Material]:
     query = select(Material).where(Material.user_id == user_id)
     if notebook_id:
         query = query.where(Material.notebook_id == notebook_id)
@@ -72,4 +81,3 @@ async def delete_material(material_id: str, user_id: UUID, db: AsyncSession) -> 
     await db.delete(material)
     await db.commit()
     return True
-

@@ -32,48 +32,73 @@ class ClearChatRequest(BaseModel):
 async def chat_endpoint(
     request: ChatRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     logger.info("Chat request received")
-    
+
     material = await get_material_for_user(request.material_id, current_user.id, db)
     if not material:
         raise HTTPException(status_code=404, detail="Material not found")
     if not material.original_text:
         raise HTTPException(status_code=400, detail="Material has no text content")
-    
+
     # Use notebook_id as session key for consistency
     session_id = f"{current_user.id}_{request.notebook_id}"
-    
+
     try:
-        context = material.original_text[:6000]
-        answer = chat(session_id, context, request.message)
-        
+        from app.services.rag.retriever import retrieve_chunks
+
+        # Retrieve context using RAG
+        chunks = retrieve_chunks(
+            query=request.message,
+            k=7,
+            material_id=request.material_id,
+            user_id=str(current_user.id),
+            notebook_id=request.notebook_id,
+        )
+        context = "\n\n".join(chunks)
+
+        # Fallback if no chunks found
+        if not context:
+            context = material.original_text[:6000]
+
+        logger.info(f"Retrieved context (first 200 chars): {context[:200]}...")
+
+        try:
+            answer = chat(session_id, context, request.message)
+        except Exception as e:
+            if "429" in str(e) or "quota" in str(e).lower():
+                logger.warning("Gemini API quota exceeded (429)")
+                raise HTTPException(
+                    status_code=429,
+                    detail="AI Quota exceeded. Please wait about 60 seconds before trying again.",
+                )
+            raise e
+
         # Save user message to DB
         user_msg = ChatMessage(
             notebook_id=UUID(request.notebook_id),
             user_id=current_user.id,
             role="user",
-            content=request.message
+            content=request.message,
         )
         db.add(user_msg)
-        
+
         # Save assistant message to DB
         assistant_msg = ChatMessage(
             notebook_id=UUID(request.notebook_id),
             user_id=current_user.id,
             role="assistant",
-            content=answer
+            content=answer,
         )
         db.add(assistant_msg)
         await db.commit()
-        
-        logger.info(f"Chat response generated and saved for notebook: {request.notebook_id}")
-        
-        return JSONResponse(content={
-            "session_id": session_id,
-            "answer": answer
-        })
+
+        logger.info(
+            f"Chat response generated and saved for notebook: {request.notebook_id}"
+        )
+
+        return JSONResponse(content={"session_id": session_id, "answer": answer})
     except Exception as e:
         logger.error(f"Chat failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate response")
@@ -83,12 +108,12 @@ async def chat_endpoint(
 async def get_notebook_chat_history(
     notebook_id: str,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get all chat messages for a notebook"""
     try:
         nb_id = UUID(notebook_id)
-        
+
         result = await db.execute(
             select(ChatMessage)
             .where(ChatMessage.notebook_id == nb_id)
@@ -96,13 +121,13 @@ async def get_notebook_chat_history(
             .order_by(ChatMessage.created_at.asc())
         )
         messages = result.scalars().all()
-        
+
         return [
             {
                 "id": str(msg.id),
                 "role": msg.role,
                 "content": msg.content,
-                "created_at": msg.created_at.isoformat()
+                "created_at": msg.created_at.isoformat(),
             }
             for msg in messages
         ]
@@ -115,16 +140,16 @@ async def get_notebook_chat_history(
 async def clear_notebook_chat(
     notebook_id: str,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Clear all chat messages for a notebook"""
     try:
         nb_id = UUID(notebook_id)
-        
+
         # Clear in-memory session
         session_id = f"{current_user.id}_{notebook_id}"
         clear_session(session_id)
-        
+
         # Delete from DB
         result = await db.execute(
             select(ChatMessage)
@@ -132,15 +157,13 @@ async def clear_notebook_chat(
             .where(ChatMessage.user_id == current_user.id)
         )
         messages = result.scalars().all()
-        
+
         for msg in messages:
             await db.delete(msg)
         await db.commit()
-        
+
         logger.info(f"Cleared chat history for notebook: {notebook_id}")
         return {"cleared": True, "count": len(messages)}
     except Exception as e:
         logger.error(f"Failed to clear chat history: {e}")
         raise HTTPException(status_code=500, detail="Failed to clear chat history")
-
-
