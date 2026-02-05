@@ -15,12 +15,14 @@ class MyOpenLM(LLM):
     def _llm_type(self) -> str:
         return "my_lm"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
+    def _call(
+        self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> str:
         response = requests.post(
             self.api_url,
             json={"message": prompt},
             headers={"Content-Type": "application/json"},
-            timeout=500
+            timeout=500,
         )
         response.raise_for_status()
         return response.json()["data"]["response"]
@@ -30,8 +32,15 @@ def get_ollama_model():
     return ChatOllama(model=os.getenv("OLLAMA_MODEL"), temperature=0)
 
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+
 def get_google_model():
-    return GoogleGenerativeAI(model=os.getenv("GOOGLE_MODEL"), temperature=0.0)
+    return ChatGoogleGenerativeAI(
+        model=os.getenv("GOOGLE_MODEL"),
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+        temperature=0.0,
+    )
 
 
 def get_MyOpenLM_model():
