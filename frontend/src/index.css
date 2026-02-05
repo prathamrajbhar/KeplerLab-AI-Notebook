@@ -325,7 +325,7 @@
   }
 
   .modal {
-    @apply rounded-2xl max-h-[85vh] overflow-hidden;
+    @apply rounded-2xl max-h-[90vh] overflow-hidden flex flex-col;
     background: #111118;
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -337,7 +337,7 @@
   }
 
   .modal-body {
-    @apply px-6 py-4 overflow-y-auto;
+    @apply px-6 py-4 overflow-y-auto flex-1;
   }
 
   .modal-footer {

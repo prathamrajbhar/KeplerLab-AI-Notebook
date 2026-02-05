@@ -56,4 +56,8 @@ export async function deleteMaterial(materialId) {
   return apiJson(`/materials/${materialId}`, { method: 'DELETE' });
 }
 
+export async function getMaterialText(materialId) {
+  return apiJson(`/materials/${materialId}/text`);
+}
+
 

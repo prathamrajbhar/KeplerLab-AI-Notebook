@@ -169,59 +169,23 @@ EXAMPLE:
 }
 
 6. diagram_block  
-Use ONLY when visual representation significantly enhances understanding of structure, flow, or relationships
-
-CRITICAL: Create SPECIFIC, DETAILED prompts that will return relevant educational diagrams when searched
-
-{
-  "block_type": "diagram_block",
-  "diagram_prompt": "Detailed, specific description for finding or creating an educational diagram. Include: type of diagram (flowchart, architecture, network, etc.), key components to show, relationships to illustrate, and visual style (technical, schematic, etc.). Be specific enough that an image search would return exactly what's needed."
-}
-
-GOOD EXAMPLES:
-{
-  "block_type": "diagram_block",
-  "diagram_prompt": "TCP/IP network protocol stack architecture diagram showing four layers (Application, Transport, Internet, Network Access) with specific protocols labeled at each layer (HTTP, FTP at Application; TCP, UDP at Transport; IP, ICMP at Internet; Ethernet at Network Access) and arrows indicating data flow between layers"
-}
+Use ONLY when visual representation significantly enhances understanding.
+CRITICAL: Use "Visual Thinking". Describe the EXACT layout (Flowchart, Venn, Cycle, Hierarchy), the specific nodes, and the arrows/relationships. Mention colors or styles if it helps distinguish parts.
 
 {
   "block_type": "diagram_block",
-  "diagram_prompt": "Software development lifecycle flowchart diagram illustrating sequential phases: Requirements Analysis, System Design, Implementation, Testing, Deployment, and Maintenance, with feedback loops showing iterative refinement between phases"
+  "diagram_prompt": "A modern, professional technical diagram illustrating [Process/System]. Layout: [Vertical/Horizontal Flow]. Key components: Node A [Description], Node B [Description], connected by [Type of Relationship]. Use a clean, educational schematic style with high contrast between elements."
 }
-
-BAD EXAMPLES (too vague):
-❌ "diagram showing how networks work"
-❌ "process flow diagram"
-❌ "system architecture"
 
 7. image_block  
-Use sparingly and only when a real-world visual example adds significant educational value
-
-CRITICAL: Create SPECIFIC, SEARCHABLE prompts that will return relevant educational images
-
-{
-  "block_type": "image_block",
-  "image_prompt": "Highly specific description for finding a relevant educational image. Include: subject matter, context, key visual elements, perspective/angle if relevant, and any important details. Make it searchable and specific enough to return appropriate results.",
-  "image_purpose": "Clear explanation of how this image supports learning and what concept it illustrates."
-}
-
-GOOD EXAMPLES:
-{
-  "block_type": "image_block",
-  "image_prompt": "Close-up photograph of a modern data center server rack showing multiple blade servers with LED status lights, network cables, and cooling systems, illustrating enterprise-scale computing infrastructure",
-  "image_purpose": "Provides visual context for understanding physical cloud computing infrastructure and data center architecture."
-}
+Use ONLY for real-world visual proof or concrete examples.
+CRITICAL: Prompts must be highly searchable. Use high-resolution photography descriptors.
 
 {
   "block_type": "image_block",
-  "image_prompt": "Professional photograph of a solar panel array installation on commercial building rooftop with clear blue sky, showing photovoltaic cells arranged in rows with mounting hardware and electrical connections visible",
-  "image_purpose": "Demonstrates real-world application of renewable energy technology and scale of commercial solar installations."
+  "image_prompt": "High-resolution, professional academic photograph of [Real-world Object/Scene]. Context: [Setting]. Key visual elements: [Element 1], [Element 2]. Ensure the image clearly demonstrates the concept of [Topic]. Style: Sharp, instructional, minimalist background.",
+  "image_purpose": "Explain EXACTLY how this image anchors the theoretical concept to a real-world visual."
 }
-
-BAD EXAMPLES (too vague):
-❌ "picture of computers"
-❌ "technology image"
-❌ "example photo"
 
 ────────────────────────────────────────────────────────
 LAYOUT INTENT (FOR RENDERING ENGINE)
