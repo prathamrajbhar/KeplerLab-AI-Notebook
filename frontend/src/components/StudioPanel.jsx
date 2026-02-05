@@ -1111,6 +1111,7 @@ function InlineQuizView({ data }) {
 function InlineSlidesView({ data, materialId }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [downloading, setDownloading] = useState(false);
+    const [showControls, setShowControls] = useState(true);
     const chapterTitle = data?.chapter_title || 'Presentation';
     const slides = data?.slides || [];
     const sessionId = data?.session_id;
@@ -1145,41 +1146,110 @@ function InlineSlidesView({ data, materialId }) {
     const progress = slideCount > 0 ? ((currentIndex + 1) / slideCount) * 100 : 0;
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-medium text-text-primary">{chapterTitle}</p>
-                    <p className="text-xs text-text-muted">{slideCount} slides</p>
-                </div>
-                <button onClick={handleDownload} disabled={downloading} className="btn-secondary text-xs flex items-center gap-1.5">
-                    {downloading ? <div className="loading-spinner w-3 h-3" /> : (
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    )}
-                    PPTX
-                </button>
-            </div>
-
-            <div className="progress-bar"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
-
+        <div
+            className="relative w-full bg-black rounded-lg overflow-hidden group"
+            onMouseEnter={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
+            style={{ aspectRatio: '16/9' }}
+        >
+            {/* Main Slide Display */}
             {imageUrl ? (
-                <div className="flex items-center justify-center glass rounded-xl p-2" style={{ minHeight: '200px' }}>
-                    <img src={imageUrl} alt={`Slide ${currentIndex + 1}`} className="max-w-full h-auto rounded-lg" style={{ maxHeight: '300px' }} />
-                </div>
+                <img
+                    src={imageUrl}
+                    alt={`Slide ${currentIndex + 1}`}
+                    className="w-full h-full object-contain"
+                />
             ) : (
-                <div className="flex items-center justify-center h-40 text-text-muted glass rounded-xl">
+                <div className="flex items-center justify-center w-full h-full text-text-muted">
                     <p>{data?.error ? `Error: ${data.error}` : 'No slides available'}</p>
                 </div>
             )}
 
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-text-muted">{currentIndex + 1} / {slideCount}</span>
-                <div className="flex gap-2">
-                    <button onClick={prev} disabled={currentIndex === 0} className="btn-secondary text-xs disabled:opacity-50">Prev</button>
-                    <button onClick={next} disabled={currentIndex === slideCount - 1} className="btn-primary text-xs disabled:opacity-50">Next</button>
+            {/* Top Overlay - Title & Download */}
+            <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-white">{chapterTitle}</p>
+                        <p className="text-xs text-white/60">{slideCount} slides</p>
+                    </div>
+                    <button
+                        onClick={handleDownload}
+                        disabled={downloading}
+                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg text-xs text-white flex items-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                        {downloading ? <div className="loading-spinner w-3 h-3" /> : (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        )}
+                        Download PPTX
+                    </button>
                 </div>
             </div>
+
+            {/* Bottom Overlay - Progress & Navigation */}
+            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                {/* Progress Bar */}
+                <div className="w-full h-1 bg-white/20 rounded-full mb-3 overflow-hidden">
+                    <div
+                        className="h-full bg-white rounded-full transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+
+                {/* Navigation Controls */}
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-white/80">{currentIndex + 1} / {slideCount}</span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={prev}
+                            disabled={currentIndex === 0}
+                            className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg text-sm text-white flex items-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Previous
+                        </button>
+                        <button
+                            onClick={next}
+                            disabled={currentIndex === slideCount - 1}
+                            className="px-4 py-2 bg-white hover:bg-white/90 rounded-lg text-sm text-black font-medium flex items-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            Next
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Side Navigation Arrows (Click Areas) */}
+            <button
+                onClick={prev}
+                disabled={currentIndex === 0}
+                className="absolute left-0 top-0 bottom-0 w-1/4 opacity-0 hover:opacity-100 transition-opacity disabled:cursor-not-allowed group"
+                aria-label="Previous slide"
+            >
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+            </button>
+            <button
+                onClick={next}
+                disabled={currentIndex === slideCount - 1}
+                className="absolute right-0 top-0 bottom-0 w-1/4 opacity-0 hover:opacity-100 transition-opacity disabled:cursor-not-allowed group"
+                aria-label="Next slide"
+            >
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </button>
         </div>
     );
 }
