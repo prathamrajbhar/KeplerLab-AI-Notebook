@@ -1,5 +1,50 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useState } from 'react';
+
+// Custom code theme with enhanced styling
+const customCodeTheme = {
+    ...oneDark,
+    'pre[class*="language-"]': {
+        ...oneDark['pre[class*="language-"]'],
+        background: 'linear-gradient(135deg, #1e1e2e 0%, #252536 100%)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        margin: '16px 0',
+        padding: '16px',
+        fontSize: '13px',
+    },
+};
+
+function CopyButton({ code }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <button
+            onClick={handleCopy}
+            className="copy-code-btn"
+            title="Copy code"
+        >
+            {copied ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+            ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            )}
+        </button>
+    );
+}
 
 export default function ChatMessage({ message }) {
     const isUser = message.role === 'user';
@@ -22,30 +67,150 @@ export default function ChatMessage({ message }) {
                     {isUser ? (
                         <p className="whitespace-pre-wrap">{message.content}</p>
                     ) : (
-                        <div className="prose prose-invert prose-sm max-w-none">
+                        <div className="markdown-content">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
-                                    h1: ({ children }) => <h1 className="text-lg font-semibold text-text-primary mt-4 mb-2">{children}</h1>,
-                                    h2: ({ children }) => <h2 className="text-base font-semibold text-text-primary mt-3 mb-2">{children}</h2>,
-                                    h3: ({ children }) => <h3 className="text-sm font-semibold text-text-primary mt-2 mb-1">{children}</h3>,
-                                    p: ({ children }) => <p className="text-text-primary mb-2 last:mb-0">{children}</p>,
-                                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                                    li: ({ children }) => <li className="text-text-primary">{children}</li>,
-                                    code: ({ inline, children }) => inline ? (
-                                        <code className="px-1.5 py-0.5 rounded bg-dark-300 text-accent-light text-xs font-mono">{children}</code>
-                                    ) : (
-                                        <code className="block p-3 rounded-lg bg-dark-300 text-text-primary text-xs font-mono overflow-x-auto my-2">{children}</code>
+                                    // Headings with gradient accents
+                                    h1: ({ children }) => (
+                                        <h1 className="md-heading md-h1">
+                                            <span className="md-heading-icon">📌</span>
+                                            {children}
+                                        </h1>
                                     ),
-                                    pre: ({ children }) => <pre className="bg-dark-300 rounded-lg overflow-x-auto my-2">{children}</pre>,
-                                    blockquote: ({ children }) => <blockquote className="border-l-2 border-accent pl-3 my-2 text-text-secondary italic">{children}</blockquote>,
-                                    a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-light hover:underline">{children}</a>,
-                                    table: ({ children }) => <table className="w-full my-2 border-collapse">{children}</table>,
-                                    th: ({ children }) => <th className="border border-border px-3 py-2 text-left text-xs font-medium text-text-primary bg-dark-300">{children}</th>,
-                                    td: ({ children }) => <td className="border border-border px-3 py-2 text-xs text-text-secondary">{children}</td>,
-                                    strong: ({ children }) => <strong className="font-semibold text-text-primary">{children}</strong>,
-                                    em: ({ children }) => <em className="italic text-text-secondary">{children}</em>,
+                                    h2: ({ children }) => (
+                                        <h2 className="md-heading md-h2">
+                                            <span className="md-heading-icon">✨</span>
+                                            {children}
+                                        </h2>
+                                    ),
+                                    h3: ({ children }) => (
+                                        <h3 className="md-heading md-h3">{children}</h3>
+                                    ),
+                                    h4: ({ children }) => (
+                                        <h4 className="md-heading md-h4">{children}</h4>
+                                    ),
+
+                                    // Enhanced paragraphs
+                                    p: ({ children }) => (
+                                        <p className="md-paragraph">{children}</p>
+                                    ),
+
+                                    // Beautiful lists
+                                    ul: ({ children }) => (
+                                        <ul className="md-list md-ul">{children}</ul>
+                                    ),
+                                    ol: ({ children }) => (
+                                        <ol className="md-list md-ol">{children}</ol>
+                                    ),
+                                    li: ({ children }) => (
+                                        <li className="md-list-item">{children}</li>
+                                    ),
+
+                                    // Syntax highlighted code blocks
+                                    code: ({ inline, className, children, ...props }) => {
+                                        const match = /language-(\w+)/.exec(className || '');
+                                        const codeString = String(children).replace(/\n$/, '');
+
+                                        if (!inline && (match || codeString.includes('\n'))) {
+                                            const language = match ? match[1] : 'text';
+                                            return (
+                                                <div className="md-code-block-wrapper">
+                                                    <div className="md-code-header">
+                                                        <span className="md-code-language">{language}</span>
+                                                        <CopyButton code={codeString} />
+                                                    </div>
+                                                    <SyntaxHighlighter
+                                                        style={customCodeTheme}
+                                                        language={language}
+                                                        PreTag="div"
+                                                        customStyle={{
+                                                            margin: 0,
+                                                            borderRadius: '0 0 12px 12px',
+                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                            borderTop: 'none',
+                                                        }}
+                                                        {...props}
+                                                    >
+                                                        {codeString}
+                                                    </SyntaxHighlighter>
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <code className="md-inline-code" {...props}>
+                                                {children}
+                                            </code>
+                                        );
+                                    },
+                                    pre: ({ children }) => <>{children}</>,
+
+                                    // Styled blockquote
+                                    blockquote: ({ children }) => (
+                                        <blockquote className="md-blockquote">
+                                            <div className="md-blockquote-icon">💡</div>
+                                            <div className="md-blockquote-content">{children}</div>
+                                        </blockquote>
+                                    ),
+
+                                    // Links with hover effect
+                                    a: ({ href, children }) => (
+                                        <a
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="md-link"
+                                        >
+                                            {children}
+                                            <svg className="w-3 h-3 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                    ),
+
+                                    // Beautiful tables
+                                    table: ({ children }) => (
+                                        <div className="md-table-wrapper">
+                                            <table className="md-table">{children}</table>
+                                        </div>
+                                    ),
+                                    thead: ({ children }) => (
+                                        <thead className="md-thead">{children}</thead>
+                                    ),
+                                    tbody: ({ children }) => (
+                                        <tbody className="md-tbody">{children}</tbody>
+                                    ),
+                                    tr: ({ children }) => (
+                                        <tr className="md-tr">{children}</tr>
+                                    ),
+                                    th: ({ children }) => (
+                                        <th className="md-th">{children}</th>
+                                    ),
+                                    td: ({ children }) => (
+                                        <td className="md-td">{children}</td>
+                                    ),
+
+                                    // Text formatting
+                                    strong: ({ children }) => (
+                                        <strong className="md-strong">{children}</strong>
+                                    ),
+                                    em: ({ children }) => (
+                                        <em className="md-em">{children}</em>
+                                    ),
+                                    del: ({ children }) => (
+                                        <del className="md-del">{children}</del>
+                                    ),
+
+                                    // Horizontal rule
+                                    hr: () => <hr className="md-hr" />,
+
+                                    // Images
+                                    img: ({ src, alt }) => (
+                                        <div className="md-image-wrapper">
+                                            <img src={src} alt={alt} className="md-image" />
+                                            {alt && <span className="md-image-caption">{alt}</span>}
+                                        </div>
+                                    ),
                                 }}
                             >
                                 {message.content}

@@ -26,7 +26,7 @@ export default function Header({ user, onBack }) {
     const userInitial = user?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U';
 
     return (
-        <header className="h-14 glass flex items-center justify-between px-4 flex-shrink-0">
+        <header className="h-14 glass flex items-center justify-between px-4 flex-shrink-0 relative z-40">
             {/* Left - Back Button, Logo & Notebook Name */}
             <div className="flex items-center gap-3">
                 {/* Back Button */}
@@ -91,27 +91,31 @@ export default function Header({ user, onBack }) {
                     </button>
 
                     {showMenu && (
-                        <div className="absolute right-0 top-full mt-2 w-52 glass rounded-xl shadow-glass overflow-hidden animate-fade-in z-50">
-                            <div className="px-4 py-3 border-b border-border">
-                                <p className="text-sm font-medium text-text-primary">{user?.username || 'User'}</p>
-                                <p className="text-xs text-text-muted truncate">{user?.email || 'user@example.com'}</p>
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-[#111118]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-glass overflow-hidden animate-fade-in z-50">
+                            <div className="px-5 py-4 border-b border-white/5 bg-white/[0.02]">
+                                <p className="text-sm font-semibold text-text-primary mb-0.5">{user?.username || 'User'}</p>
+                                <p className="text-[11px] text-text-muted truncate">{user?.email || 'user@example.com'}</p>
                             </div>
-                            <div className="py-1">
-                                <button className="w-full px-4 py-2.5 text-left text-sm text-text-secondary hover:bg-glass-light flex items-center gap-3 transition-colors">
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    Settings
+                            <div className="p-1.5">
+                                <button className="w-full px-4 py-2.5 text-left text-sm text-text-secondary hover:bg-white/[0.05] hover:text-white rounded-xl flex items-center gap-3 transition-all">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </div>
+                                    <span>Settings</span>
                                 </button>
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-text-secondary hover:bg-glass-light flex items-center gap-3 transition-colors"
+                                    className="w-full px-4 py-2.5 text-left text-sm text-text-secondary hover:bg-status-error/10 hover:text-status-error rounded-xl flex items-center gap-3 transition-all"
                                 >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                    </svg>
-                                    Sign out
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-status-error/20">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                    </div>
+                                    <span>Sign out</span>
                                 </button>
                             </div>
                         </div>
